@@ -14,7 +14,10 @@ config :keyboard_warrior, KeyboardWarriorWeb.Endpoint,
   url: [host: "localhost"],
   secret_key_base: "z4PwQu+CNQvv37uiFchh6MCV+H5NNMwzYstjSYlNKhX/u8XHcFqU9emRNciZoUtK",
   render_errors: [view: KeyboardWarriorWeb.ErrorView, accepts: ~w(html json)],
-  pubsub: [name: KeyboardWarrior.PubSub, adapter: Phoenix.PubSub.PG2]
+  pubsub: [name: KeyboardWarrior.PubSub, adapter: Phoenix.PubSub.PG2],
+  live_view: [
+    signing_salt: "JpQHs5VV2a6XZ9g7icy2qU5eQSB79Mk/"
+  ]
 
 # Configures Elixir's Logger
 config :logger, :console,

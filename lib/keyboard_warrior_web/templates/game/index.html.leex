@@ -1,0 +1,20 @@
+<div phx-keyup="type" phx-target="window">
+  <div>
+    <button phx-click="start_game" <%= if @timer == 0, do: "disabled" %>>Start Game</button>
+    <h1><%= @game_status %></h1>
+    <h2>Points: <%= @points %></h2>
+
+    <% cursor_color = if @display_error, do: "red", else: "blue" %>
+    <div> Type this:
+      <h2>
+        <span style="color:green;"><%= @typed %></span
+        ><span style="background-color:<%= cursor_color %>;color:white;"><%= @next %></span
+        ><span><%= @rest %></span>
+      </h2>
+    </div>
+
+    <%= if @game_status == "Game Over" do %>
+      <div> Words typed: <%= @words_typed %></div>
+    <% end %>
+  </div>
+</div>

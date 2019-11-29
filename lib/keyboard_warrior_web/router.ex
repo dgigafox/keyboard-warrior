@@ -18,7 +18,7 @@ defmodule KeyboardWarriorWeb.Router do
     # Use the default browser stack
     pipe_through(:browser)
 
-    get("/", PageController, :index)
+    live("/", Game)
   end
 
   # Other scopes may use custom stacks.
