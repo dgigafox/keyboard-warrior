@@ -3,6 +3,8 @@ defmodule KeyboardWarriorWeb.Game do
 
   alias KeyboardWarriorWeb.GameView
 
+  @time_limit 600
+
   def render(assigns) do
     GameView.render("index.html", assigns)
   end
@@ -10,7 +12,7 @@ defmodule KeyboardWarriorWeb.Game do
   def mount(_session, socket) do
     {:ok,
      assign(socket,
-       game_status: "Ready!!!",
+       game_status: :initialized,
        random_letter: nil,
        timer: 5,
        points: 0,
@@ -18,7 +20,8 @@ defmodule KeyboardWarriorWeb.Game do
        next: "",
        rest: "",
        display_error: false,
-       words_typed: 0
+       words_typed: 0,
+       game_timer: @time_limit
      )}
   end
 
@@ -54,6 +57,7 @@ defmodule KeyboardWarriorWeb.Game do
           )
 
         nil ->
+          Process.cancel_timer(socket.assigns.game_timer_ref)
           send(self(), :end_game)
           assign(socket, typed: typed)
       end
@@ -76,7 +80,10 @@ defmodule KeyboardWarriorWeb.Game do
         _ -> count_words(typed) - 1
       end
 
-    {:noreply, assign(socket, words_typed: words_typed, game_status: "Game Over")}
+    game_timer = socket.assigns.game_timer
+    time_lapsed = @time_limit - game_timer
+    wpm = (60 * (words_typed / time_lapsed)) |> trunc()
+    {:noreply, assign(socket, words_typed: words_typed, game_status: :game_over, wpm: wpm)}
   end
 
   def handle_info(:timer, socket) do
@@ -84,18 +91,41 @@ defmodule KeyboardWarriorWeb.Game do
 
     cond do
       countdown == 0 ->
+        Process.cancel_timer(socket.assigns.timer_ref)
         send(self(), :flash_letter)
-        {:noreply, assign(socket, game_status: "Type!", random_letter: get_random())}
+        {:noreply, assign(socket, game_status: :in_game, random_letter: get_random())}
 
       true ->
-        Process.send_after(self(), :timer, 1000)
+        timer_ref = Process.send_after(self(), :timer, 1000)
 
         {:noreply,
-         assign(socket, timer: countdown - 1, game_status: "Game starting in #{countdown}")}
+         assign(socket,
+           timer_ref: timer_ref,
+           timer: countdown - 1,
+           game_status: :ready,
+           countdown: countdown
+         )}
+    end
+  end
+
+  def handle_info(:game_timer, socket) do
+    game_timer = socket.assigns.game_timer
+
+    cond do
+      game_timer == 0 ->
+        Process.cancel_timer(socket.assigns.game_timer_ref)
+        send(self(), :end_game)
+        {:noreply, socket}
+
+      true ->
+        game_timer_ref = Process.send_after(self(), :game_timer, 1000)
+        {:noreply, assign(socket, game_timer: game_timer - 1, game_timer_ref: game_timer_ref)}
     end
   end
 
   def handle_info(:flash_letter, socket) do
+    send(self(), :game_timer)
+
     random_letter = socket.assigns.random_letter
     {typed, to_type} = String.split_at(random_letter, 0)
     {next, rest} = String.next_codepoint(to_type)
@@ -103,7 +133,7 @@ defmodule KeyboardWarriorWeb.Game do
   end
 
   defp get_random do
-    Faker.Lorem.sentence()
+    Faker.Lorem.Shakespeare.as_you_like_it()
   end
 
   defp count_words(string) do
