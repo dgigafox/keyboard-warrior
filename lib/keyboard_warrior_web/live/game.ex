@@ -3,7 +3,7 @@ defmodule KeyboardWarriorWeb.Game do
 
   alias KeyboardWarriorWeb.GameView
 
-  @time_limit 600
+  @time_limit 60
 
   def render(assigns) do
     GameView.render("index.html", assigns)
