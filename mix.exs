@@ -46,7 +46,10 @@ defmodule KeyboardWarrior.Mixfile do
       {:plug_cowboy, "~> 2.0"},
 
       # game utils
-      {:faker, "~> 0.13.0"}
+      {:faker, "~> 0.13.0"},
+
+      # deployment
+      {:distillery, "~> 2.0"}
     ]
   end
 
