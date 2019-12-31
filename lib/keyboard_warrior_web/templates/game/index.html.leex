@@ -15,7 +15,7 @@
       <% end %>
 
       <%= if @game_status == :game_over do %>
-        <%= render "game_conclusion.html", words_typed: @words_typed, wpm: @wpm %>
+        <%= render "game_conclusion.html", words_typed: @words_typed, wpm: @wpm, error_count: @error_count %>
       <% end %>
     </div>
   </div>

@@ -4,32 +4,33 @@ defmodule KeyboardWarriorWeb.Game do
   alias KeyboardWarriorWeb.GameView
 
   @time_limit 60
+  @initial_assigns [
+    game_status: :initialized,
+    random_letter: nil,
+    timer: 5,
+    points: 0,
+    typed: "",
+    next: "",
+    rest: "",
+    display_error: false,
+    words_typed: 0,
+    game_timer: @time_limit,
+    error_count: 0
+  ]
 
   def render(assigns) do
     GameView.render("index.html", assigns)
   end
 
   def mount(_session, socket) do
-    {:ok,
-     assign(socket,
-       game_status: :initialized,
-       random_letter: nil,
-       timer: 5,
-       points: 0,
-       typed: "",
-       next: "",
-       rest: "",
-       display_error: false,
-       words_typed: 0,
-       game_timer: @time_limit
-     )}
+    {:ok, assign(socket, @initial_assigns)}
   end
 
   def handle_event("type", %{"key" => key}, socket) do
-    if key == socket.assigns.next do
-      send(self(), :move_cursor)
-    else
-      send(self(), :display_error)
+    cond do
+      key == "Shift" -> nil
+      key == socket.assigns.next -> send(self(), :move_cursor)
+      true -> send(self(), :display_error)
     end
 
     {:noreply, socket}
@@ -38,6 +39,14 @@ defmodule KeyboardWarriorWeb.Game do
   def handle_event("start_game", _value, socket) do
     send(self(), :timer)
     {:noreply, socket}
+  end
+
+  def handle_event("retry", _value, socket) do
+    {:noreply, live_redirect(socket, to: "/")}
+  end
+
+  def handle_params(_, _, socket) do
+    {:noreply, assign(socket, @initial_assigns)}
   end
 
   def handle_info(:move_cursor, socket) do
@@ -59,25 +68,27 @@ defmodule KeyboardWarriorWeb.Game do
         nil ->
           Process.cancel_timer(socket.assigns.game_timer_ref)
           send(self(), :end_game)
-          assign(socket, typed: typed)
+          assign(socket, typed: typed, next: "", rest: "")
       end
 
     {:noreply, socket}
   end
 
   def handle_info(:display_error, socket) do
-    {:noreply, assign(socket, display_error: true)}
+    {:noreply, assign(socket, display_error: true, error_count: socket.assigns.error_count + 1)}
   end
 
   def handle_info(:end_game, socket) do
     typed = socket.assigns.typed
     rest = socket.assigns.rest
+    next = socket.assigns.next
+    word_count = count_words(typed)
 
     words_typed =
-      case String.next_codepoint(rest) do
-        nil -> count_words(typed)
-        {" ", _rest} -> count_words(typed)
-        _ -> count_words(typed) - 1
+      case String.next_codepoint(next <> rest) do
+        nil -> word_count
+        {" ", _rest} -> word_count
+        _ -> if word_count > 0, do: word_count - 1, else: 0
       end
 
     game_timer = socket.assigns.game_timer
