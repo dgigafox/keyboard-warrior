@@ -9,6 +9,16 @@
       <td>Words per minute:</td>
       <td> <%= @wpm %> </td>
     </tr>
+    <tr>
+      <td>Error count:</td>
+      <td> <%= @error_count %> </td>
+    </tr>
     </table>
+  </div>
+
+  <div class="col-12 text-center">
+    <button type="button" class="btn btn-dark" phx-click="retry">
+      Retry
+    </button>
   </div>
 </div>
